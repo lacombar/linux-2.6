@@ -2367,6 +2367,58 @@ static void print_quoted_string(FILE *out, const char *str)
 	putc('"', out);
 }
 
+static void print_property(FILE *out, struct property *prop)
+{
+	switch (prop->type) {
+	case P_PROMPT:
+		fputs("  prompt ", out);
+		print_quoted_string(out, prop->text);
+		if (!expr_is_yes(prop->visible.expr)) {
+			fputs(" if ", out);
+			expr_fprint(prop->visible.expr, out);
+		}
+		fputc('\n', out);
+		break;
+	case P_DEFAULT:
+		fputs( "  default ", out);
+		expr_fprint(prop->expr, out);
+		if (!expr_is_yes(prop->visible.expr)) {
+			fputs(" if ", out);
+			expr_fprint(prop->visible.expr, out);
+		}
+		fputc('\n', out);
+		break;
+	case P_CHOICE:
+		fputs("  #choice value\n", out);
+		break;
+	case P_SELECT:
+		fputs( "  select ", out);
+		expr_fprint(prop->expr, out);
+		fputc('\n', out);
+		break;
+	case P_RANGE:
+		fputs( "  range ", out);
+		expr_fprint(prop->expr, out);
+		fputc('\n', out);
+		break;
+	case P_MENU:
+		fputs( "  menu ", out);
+		print_quoted_string(out, prop->text);
+		fputc('\n', out);
+		break;
+	case P_SYMBOL:
+		break;
+	case P_COMMENT:
+		fputs("\ncomment ", out);
+		print_quoted_string(out, prop->text);
+		fputs("\n", out);
+		break;
+	default:
+		fprintf(out, "  unknown prop %d!\n", prop->type);
+		break;
+	}
+}
+
 static void print_symbol(FILE *out, struct menu *menu)
 {
 	struct symbol *sym = menu->sym;
@@ -2402,49 +2454,7 @@ static void print_symbol(FILE *out, struct menu *menu)
 	for (prop = sym->prop; prop; prop = prop->next) {
 		if (prop->menu != menu)
 			continue;
-		switch (prop->type) {
-		case P_PROMPT:
-			fputs("  prompt ", out);
-			print_quoted_string(out, prop->text);
-			if (!expr_is_yes(prop->visible.expr)) {
-				fputs(" if ", out);
-				expr_fprint(prop->visible.expr, out);
-			}
-			fputc('\n', out);
-			break;
-		case P_DEFAULT:
-			fputs( "  default ", out);
-			expr_fprint(prop->expr, out);
-			if (!expr_is_yes(prop->visible.expr)) {
-				fputs(" if ", out);
-				expr_fprint(prop->visible.expr, out);
-			}
-			fputc('\n', out);
-			break;
-		case P_CHOICE:
-			fputs("  #choice value\n", out);
-			break;
-		case P_SELECT:
-			fputs( "  select ", out);
-			expr_fprint(prop->expr, out);
-			fputc('\n', out);
-			break;
-		case P_RANGE:
-			fputs( "  range ", out);
-			expr_fprint(prop->expr, out);
-			fputc('\n', out);
-			break;
-		case P_MENU:
-			fputs( "  menu ", out);
-			print_quoted_string(out, prop->text);
-			fputc('\n', out);
-			break;
-		case P_SYMBOL:
-			break;
-		default:
-			fprintf(out, "  unknown prop %d!\n", prop->type);
-			break;
-		}
+		print_property(out, prop);
 	}
 	if (menu->help) {
 		int len = strlen(menu->help);
@@ -2465,20 +2475,7 @@ void zconfdump(FILE *out)
 		if ((sym = menu->sym))
 			print_symbol(out, menu);
 		else if ((prop = menu->prompt)) {
-			switch (prop->type) {
-			case P_COMMENT:
-				fputs("\ncomment ", out);
-				print_quoted_string(out, prop->text);
-				fputs("\n", out);
-				break;
-			case P_MENU:
-				fputs("\nmenu ", out);
-				print_quoted_string(out, prop->text);
-				fputs("\n", out);
-				break;
-			default:
-				;
-			}
+			print_property(out, prop);
 			if (!expr_is_yes(prop->visible.expr)) {
 				fputs("  depends ", out);
 				expr_fprint(prop->visible.expr, out);
