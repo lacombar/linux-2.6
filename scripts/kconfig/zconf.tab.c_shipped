@@ -2449,9 +2449,9 @@ void zconfdump(FILE *out)
 			menu = menu->next;
 		else while ((menu = menu->parent)) {
 			if (menu->sym && sym_is_choice(menu->sym))
-				fputs("\nendchoice\n", out);
+				fprintf(out, "\nendchoice");
 			if (menu->prompt && menu->prompt->type == P_MENU)
-				fputs("\nendmenu\n", out);
+				fprintf(out, "\nendmenu");
 			if (menu->next) {
 				menu = menu->next;
 				break;
