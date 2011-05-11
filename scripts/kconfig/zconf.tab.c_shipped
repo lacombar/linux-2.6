@@ -2367,6 +2367,8 @@ static void print_quoted_string(FILE *out, const char *str)
 	putc('"', out);
 }
 
+static int indent;
+
 static void print_property(FILE *out, struct property *prop)
 {
 	const char *prop_string;
@@ -2375,7 +2377,7 @@ static void print_property(FILE *out, struct property *prop)
 	if (prop_string == NULL)
 		return;
 
-	fprintf(out, "  %s%s ",
+	fprintf(out, "%*s  %s%s ", indent * 8, "",
 	    (prop->type == P_CHOICE) ? "#" : "",
 	    prop_string);
 
@@ -2414,10 +2416,10 @@ static void print_symbol(FILE *out, struct menu *menu)
 	struct property *prop;
 
 	fprintf(out, "\n");
-	fprintf(out, "%s %s\n",
+	fprintf(out, "%*s%s %s\n", indent * 8, "",
 	    (sym_is_choice(sym)) ? "choice" : "config",
 	    (sym->name) ? sym->name: "");
-	fprintf(out, "  %s\n",
+	fprintf(out, "%*s  %s\n", indent * 8, "",
 	    sym_type_name(sym->type));
 
 	for (prop = sym->prop; prop; prop = prop->next) {
@@ -2440,14 +2442,20 @@ void zconfdump(FILE *out)
 			int len = strlen(menu->help);
 			while (menu->help[--len] == '\n')
 				menu->help[len] = 0;
-			fprintf(out, "  help\n%s\n", menu->help);
+			fprintf(out, "%*s  help\n%s\n", indent * 8, "",
+			    menu->help);
 		}
 
-		if (menu->list)
+		if (menu->list) {
+			indent++;
 			menu = menu->list;
+		}
 		else if (menu->next)
 			menu = menu->next;
 		else while ((menu = menu->parent)) {
+			if (menu != &rootmenu)
+				indent--;
+			fprintf(out, "%*s", indent * 8, "");
 			if (menu->sym && sym_is_choice(menu->sym))
 				fprintf(out, "\nendchoice");
 			if (menu->prompt && menu->prompt->type == P_MENU)
