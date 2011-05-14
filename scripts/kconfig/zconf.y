@@ -612,129 +612,100 @@ static void print_quoted_string(FILE *out, const char *str)
 	putc('"', out);
 }
 
+static int indent;
+
+static void print_property(FILE *out, struct property *prop)
+{
+	const char *prop_string;
+
+	prop_string = prop_get_type_name(prop->type);
+	if (prop_string == NULL)
+		return;
+
+	fprintf(out, "%*s  %s%s ", indent * 8, "",
+	    (prop->type == P_CHOICE) ? "#" : "",
+	    prop_string);
+
+	switch (prop->type) {
+	case P_PROMPT:
+		print_quoted_string(out, prop->text);
+		if (!expr_is_yes(prop->visible.expr)) {
+			fputs(" if ", out);
+			expr_fprint(prop->visible.expr, out);
+		}
+		break;
+	case P_DEFAULT:
+		expr_fprint(prop->expr, out);
+		if (!expr_is_yes(prop->visible.expr)) {
+			fputs(" if ", out);
+			expr_fprint(prop->visible.expr, out);
+		}
+		break;
+	case P_SELECT:
+	case P_RANGE:
+		expr_fprint(prop->expr, out);
+		break;
+	case P_MENU:
+	case P_COMMENT:
+		print_quoted_string(out, prop->text);
+		break;
+	default:
+		break;
+	}
+	fprintf(out, "\n");
+}
+
 static void print_symbol(FILE *out, struct menu *menu)
 {
 	struct symbol *sym = menu->sym;
 	struct property *prop;
 
-	if (sym_is_choice(sym))
-		fprintf(out, "\nchoice\n");
-	else
-		fprintf(out, "\nconfig %s\n", sym->name);
-	switch (sym->type) {
-	case S_BOOLEAN:
-		fputs("  boolean\n", out);
-		break;
-	case S_TRISTATE:
-		fputs("  tristate\n", out);
-		break;
-	case S_STRING:
-		fputs("  string\n", out);
-		break;
-	case S_INT:
-		fputs("  integer\n", out);
-		break;
-	case S_HEX:
-		fputs("  hex\n", out);
-		break;
-	default:
-		fputs("  ???\n", out);
-		break;
-	}
+	fprintf(out, "%*s%s %s\n", indent * 8, "",
+	    (sym_is_choice(sym)) ? "choice" : "config",
+	    (sym->name) ? sym->name: "");
+	fprintf(out, "%*s  %s\n", indent * 8, "",
+	    sym_type_name(sym->type));
+
 	for (prop = sym->prop; prop; prop = prop->next) {
 		if (prop->menu != menu)
 			continue;
-		switch (prop->type) {
-		case P_PROMPT:
-			fputs("  prompt ", out);
-			print_quoted_string(out, prop->text);
-			if (!expr_is_yes(prop->visible.expr)) {
-				fputs(" if ", out);
-				expr_fprint(prop->visible.expr, out);
-			}
-			fputc('\n', out);
-			break;
-		case P_DEFAULT:
-			fputs( "  default ", out);
-			expr_fprint(prop->expr, out);
-			if (!expr_is_yes(prop->visible.expr)) {
-				fputs(" if ", out);
-				expr_fprint(prop->visible.expr, out);
-			}
-			fputc('\n', out);
-			break;
-		case P_CHOICE:
-			fputs("  #choice value\n", out);
-			break;
-		case P_SELECT:
-			fputs( "  select ", out);
-			expr_fprint(prop->expr, out);
-			fputc('\n', out);
-			break;
-		case P_RANGE:
-			fputs( "  range ", out);
-			expr_fprint(prop->expr, out);
-			fputc('\n', out);
-			break;
-		case P_MENU:
-			fputs( "  menu ", out);
-			print_quoted_string(out, prop->text);
-			fputc('\n', out);
-			break;
-		case P_SYMBOL:
-			break;
-		default:
-			fprintf(out, "  unknown prop %d!\n", prop->type);
-			break;
-		}
+		print_property(out, prop);
 	}
-	if (menu->help) {
-		int len = strlen(menu->help);
-		while (menu->help[--len] == '\n')
-			menu->help[len] = 0;
-		fprintf(out, "  help\n%s\n", menu->help);
-	}
+	fprintf(out, "\n");
 }
 
 void zconfdump(FILE *out)
 {
-	struct property *prop;
-	struct symbol *sym;
 	struct menu *menu;
 
 	menu = rootmenu.list;
 	while (menu) {
-		if ((sym = menu->sym))
+		if (menu->sym)
 			print_symbol(out, menu);
-		else if ((prop = menu->prompt)) {
-			switch (prop->type) {
-			case P_COMMENT:
-				fputs("\ncomment ", out);
-				print_quoted_string(out, prop->text);
-				fputs("\n", out);
-				break;
-			case P_MENU:
-				fputs("\nmenu ", out);
-				print_quoted_string(out, prop->text);
-				fputs("\n", out);
-				break;
-			default:
-				;
-			}
-			if (!expr_is_yes(prop->visible.expr)) {
-				fputs("  depends ", out);
-				expr_fprint(prop->visible.expr, out);
-				fputc('\n', out);
-			}
+
+		if (menu->help) {
+			int len = strlen(menu->help);
+			while (menu->help[--len] == '\n')
+				menu->help[len] = 0;
+			fprintf(out, "%*s  help\n%s\n", indent * 8, "",
+			    menu->help);
 		}
 
-		if (menu->list)
+		if (menu->list) {
+			indent++;
 			menu = menu->list;
+		}
 		else if (menu->next)
 			menu = menu->next;
 		else while ((menu = menu->parent)) {
-			if (menu->prompt && menu->prompt->type == P_MENU)
-				fputs("\nendmenu\n", out);
+			if (menu != &rootmenu)
+				indent--;
+			fprintf(out, "%*s", indent * 8, "");
+			if (menu->sym && sym_is_choice(menu->sym))
+				fprintf(out, "endchoice\n\n");
+			if (menu->prompt && menu->prompt->type == P_MENU &&
+			    menu != &rootmenu)
+				fprintf(out, "endmenu\n\n");
 			if (menu->next) {
 				menu = menu->next;
 				break;
