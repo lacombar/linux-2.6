@@ -19,11 +19,73 @@ check_gettext()
 	}
 }
 
+check_qt()
+{
+	local cflags=""
+	local libs=""
+	local prefix=""
+
+	if pkg-config --exists QtCore 2> /dev/null; then
+		cflags="$(pkg-config QtCore QtGui Qt3Support --cflags)"
+		libs="$(pkg-config QtCore QtGui Qt3Support --libs)"
+		prefix="$(pkg-config QtCore --variable=prefix)"
+	else
+		echo "* Unable to find the QT4 tool qmake. Trying to use QT3"
+		pkg=""
+		pkg-config --exists qt 2> /dev/null && pkg=qt
+		pkg-config --exists qt-mt 2> /dev/null && pkg=qt-mt
+		if [ -n "$pkg" ]; then
+			cflags="$(pkg-config $pkg --cflags)"
+			libs="$(pkg-config $pkg --libs)"
+			prefix="$(pkg-config $pkg --variable=prefix)"
+		else
+			for d in $QTDIR /usr/share/qt* /usr/lib/qt*; do
+				if [ -f $d/include/qconfig.h ]; then
+					prefix=$d
+					break
+				fi
+			done
+			if [ -z "$prefix" ]; then
+				echo "  *"
+				echo "  * Unable to find any QT installation. Please make sure that"
+				echo "  * the QT4 or QT3 development package is correctly installed and"
+				echo "  * either qmake can be found or install pkg-config or set"
+				echo "  * the QTDIR environment variable to the correct location."
+				echo "  *"
+				false
+			fi
+			libpath=$dir/lib
+			lib=qt
+			osdir=""
+			${HOSTCXX} -print-multi-os-directory > /dev/null 2>&1 && \
+			    osdir=x$(${HOSTCXX} -print-multi-os-directory)
+			test -d $libpath/$osdir && libpath=$libpath/$osdir
+			test -f $libpath/libqt-mt.so && lib=qt-mt
+			cflags="-I$prefix/include"
+			libs="-L$libpath -Wl,-rpath,$libpath -l$lib"
+		fi
+	fi
+
+	if [ -x $prefix/bin/moc ]; then
+		moc=$prefix/bin/moc
+	elif [ -a -x /usr/bin/moc ]; then
+		echo "  *"
+		echo "  * Unable to find $prefix/bin/moc, using /usr/bin/moc instead."
+		echo "  *"
+		moc="/usr/bin/moc"
+	fi
+
+	echo "HOSTCXXFLAGS_qconf.o	+= $cflags" >> ${obj}/.tmp_check
+	echo "HOSTLOADLIBES_qconf	+= $libs"   >> ${obj}/.tmp_check
+	echo "HOSTMOC	:= $moc" >> ${obj}/.tmp_check
+}
+
 rm -f ${obj}/.tmp_check
 
 for arg in $*; do
 	case $arg in
 	gettext)	;;
+	qt)		;;
 	*)
 		echo "  *"
 		echo "  * Do not know how to check for \`$arg'"
