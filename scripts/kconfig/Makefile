@@ -173,7 +173,11 @@ qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 gconf-objs	:= gconf.o zconf.tab.o
 
+frontends-objs := $(conf-objs) $(mconf-objs) $(nconf-objs)
+
 hostprogs-y := conf
+
+KC_CHECK := gettext
 
 ifeq ($(MAKECMDGOALS),nconfig)
 	hostprogs-y += nconf
@@ -203,7 +207,7 @@ ifeq ($(gconf-target),1)
 	hostprogs-y += gconf
 endif
 
-clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck
+clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck .tmp_check
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
 clean-files     += mconf qconf gconf nconf
 clean-files     += config.pot linux.pot
@@ -215,9 +219,6 @@ $(obj)/dochecklxdialog:
 	$(Q)$(CONFIG_SHELL) $(check-lxdialog) -check $(HOSTCC) $(HOST_EXTRACFLAGS) $(HOSTLOADLIBES_mconf)
 
 always := dochecklxdialog
-
-# Add environment specific flags
-HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(srctree)/$(src)/check.sh $(HOSTCC) $(HOSTCFLAGS))
 
 # generated files seem to need this to find local include files
 HOSTCFLAGS_zconf.lex.o	:= -I$(src)
@@ -317,7 +318,20 @@ $(obj)/.tmp_gtkcheck:
 		echo "*"; 								\
 		false;									\
 	fi
+
+need-check := $(addprefix $(obj)/,$(frontends-objs))
+
+$(need-check): $(obj)/.tmp_check
+
+-include $(obj)/.tmp_check
+
+KC_CHECKED := $(foreach check,$(KC_CHECK),$(if $(KCONFIG_CHECKED_$(check)),$(check),))
+ifneq ($(KC_CHECK),$(KC_CHECKED))
+$(obj)/.tmp_check: FORCE
 endif
+
+$(obj)/.tmp_check: $(src)/Makefile
+	$(Q)$(srctree)/$(src)/check.sh $(KC_CHECK)
 
 $(obj)/zconf.tab.o: $(obj)/zconf.lex.c $(obj)/zconf.hash.c
 
