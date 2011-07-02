@@ -47,6 +47,12 @@ check_gtk()
 	echo "HOSTLOADLIBES_gconf	+= $libs"   >> ${obj}/.tmp_check
 }
 
+check_menu()
+{
+
+	echo "HOSTLOADLIBES_nconf	+= -lmenu" >> ${obj}/.tmp_check
+}
+
 check_ncurses()
 {
 	local cflags=""
@@ -94,6 +100,12 @@ check_ncurses()
 	echo "HOSTCFLAGS	+=$cflags" >> ${obj}/.tmp_check
 	echo "HOSTLOADLIBES_mconf	+= $libs"   >> ${obj}/.tmp_check
 	echo "HOSTLOADLIBES_nconf	+= $libs"   >> ${obj}/.tmp_check
+}
+
+check_panel()
+{
+
+	echo "HOSTLOADLIBES_nconf	+= -lpanel" >> ${obj}/.tmp_check
 }
 
 check_qt()
@@ -163,7 +175,9 @@ for arg in $*; do
 	case $arg in
 	gettext)	;;
 	gtk)		;;
+	menu)		;;
 	ncurses)	;;
+	panel)		;;
 	qt)		;;
 	*)
 		echo "  *"

@@ -174,7 +174,7 @@ KC_CHECK := gettext
 
 ifeq ($(MAKECMDGOALS),nconfig)
 	hostprogs-y += nconf
-	KC_CHECK += ncurses
+	KC_CHECK += menu panel ncurses
 endif
 
 ifeq ($(MAKECMDGOALS),menuconfig)
@@ -209,8 +209,6 @@ LEX_PREFIX_zconf	:= zconf
 YACC_PREFIX_zconf	:= zconf
 
 HOSTCFLAGS_gconf.o	= -Wno-missing-prototypes
-
-HOSTLOADLIBES_nconf	= -lmenu -lpanel
 
 need-check := $(addprefix $(obj)/,$(frontends-objs))
 need-check += $(addprefix $(obj)/,$(lxdialog))
