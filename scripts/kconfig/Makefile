@@ -174,7 +174,7 @@ qconf-objs	:= zconf.tab.o
 gconf-objs	:= gconf.o zconf.tab.o
 
 frontends-objs := $(conf-objs) $(mconf-objs) $(nconf-objs)
-frontends-objs += $(qconf-cxxobjs)
+frontends-objs += $(qconf-cxxobjs) $(gconf-objs)
 
 hostprogs-y := conf
 
@@ -196,16 +196,13 @@ ifeq ($(MAKECMDGOALS),xconfig)
 	hostprogs-y += qconf
 	KC_CHECK += qt
 endif
+
 ifeq ($(MAKECMDGOALS),gconfig)
-	gconf-target := 1
-endif
-
-
-ifeq ($(gconf-target),1)
 	hostprogs-y += gconf
+	KC_CHECK += gtk
 endif
 
-clean-files	:= qconf.moc .tmp_gtkcheck .tmp_check
+clean-files	:= qconf.moc .tmp_check
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
 clean-files     += mconf qconf gconf nconf
 clean-files     += config.pot linux.pot
@@ -225,38 +222,12 @@ HOSTCFLAGS_zconf.tab.o	:= -I$(src)
 LEX_PREFIX_zconf	:= zconf
 YACC_PREFIX_zconf	:= zconf
 
-HOSTLOADLIBES_gconf	= `pkg-config --libs gtk+-2.0 gmodule-2.0 libglade-2.0`
-HOSTCFLAGS_gconf.o	= `pkg-config --cflags gtk+-2.0 gmodule-2.0 libglade-2.0` \
-                          -Wno-missing-prototypes
+HOSTCFLAGS_gconf.o	= -Wno-missing-prototypes
 
 HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
 
 HOSTLOADLIBES_nconf	= -lmenu -lpanel -lncurses
 
-$(obj)/gconf.o: $(obj)/.tmp_gtkcheck
-
-ifeq ($(gconf-target),1)
--include $(obj)/.tmp_gtkcheck
-
-# GTK needs some extra effort, too...
-$(obj)/.tmp_gtkcheck:
-	@if `pkg-config --exists gtk+-2.0 gmodule-2.0 libglade-2.0`; then		\
-		if `pkg-config --atleast-version=2.0.0 gtk+-2.0`; then			\
-			touch $@;								\
-		else									\
-			echo "*"; 							\
-			echo "* GTK+ is present but version >= 2.0.0 is required.";	\
-			echo "*";							\
-			false;								\
-		fi									\
-	else										\
-		echo "*"; 								\
-		echo "* Unable to find the GTK+ installation. Please make sure that"; 	\
-		echo "* the GTK+ 2.0 development package is correctly installed..."; 	\
-		echo "* You need gtk+-2.0, glib-2.0 and libglade-2.0."; 		\
-		echo "*"; 								\
-		false;									\
-	fi
 
 need-check := $(addprefix $(obj)/,$(frontends-objs))
 

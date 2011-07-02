@@ -19,6 +19,34 @@ check_gettext()
 	}
 }
 
+check_gtk()
+{
+	local cflags=""
+	local libs=""
+
+	if pkg-config --exists gtk+-2.0 gmodule-2.0 libglade-2.0; then
+		if ! pkg-config --atleast-version=2.0.0 gtk+-2.0; then
+			echo "*"
+			echo "* GTK+ is present but version >= 2.0.0 is required."
+			echo "*"
+			false
+		fi
+	else
+		echo "*"
+		echo "* Unable to find the GTK+ installation. Please make sure that"
+		echo "* the GTK+ 2.0 development package is correctly installed..."
+		echo "* You need gtk+-2.0, glib-2.0 and libglade-2.0."
+		echo "*"
+		false
+	fi
+
+	cflags="$(pkg-config --cflags gtk+-2.0 gmodule-2.0 libglade-2.0)"
+	libs="$(pkg-config --libs gtk+-2.0 gmodule-2.0 libglade-2.0)"
+
+	echo "HOSTCFLAGS_gconf.o	+= $cflags" >> ${obj}/.tmp_check
+	echo "HOSTLOADLIBES_gconf	+= $libs"   >> ${obj}/.tmp_check
+}
+
 check_qt()
 {
 	local cflags=""
@@ -85,6 +113,7 @@ rm -f ${obj}/.tmp_check
 for arg in $*; do
 	case $arg in
 	gettext)	;;
+	gtk)		;;
 	qt)		;;
 	*)
 		echo "  *"
