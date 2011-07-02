@@ -47,6 +47,55 @@ check_gtk()
 	echo "HOSTLOADLIBES_gconf	+= $libs"   >> ${obj}/.tmp_check
 }
 
+check_ncurses()
+{
+	local cflags=""
+	local libs=""
+
+	ncurses_h="ncursesw/curses.h ncurses/ncurses.h ncurses/curses.h"
+	ncurses_h="${ncurses_h} ncurses.h curses.h"
+
+	for header in ${ncurses_h}; do
+		if echo "#include <${header}>" | \
+		    $HOSTCC -xc -E -c -o /dev/null - 2> /dev/null; then
+			cflags="-DCURSES_LOC=\"<$header>\""
+			break
+		fi
+	done
+
+	if [ -z "$cflags" ]; then
+		echo "  *"
+		echo "  * Unable to find the required ncurses header files."
+		echo "  * "
+		echo "  * Please install ncurses (ncurses-devel) and try again."
+		echo "  *"
+		false
+	fi
+
+	for ext in so a dylib ; do
+		for lib in ncursesw ncurses curses; do
+			filename="$($HOSTCC -print-file-name=lib${lib}.${ext})"
+			if [ "$filename" != "lib${lib}.${ext}" ]; then
+				libs=-l$lib
+				break
+			fi
+		done
+		[ -n "$libs" ] && break
+	done
+
+	if [ -z "$libs" ]; then
+		echo "  * Unable to find the required ncurses library."
+		echo "  *"
+		echo "  * Please install ncurses (ncurses-devel) and try again."
+		echo "  * "
+		false
+	fi
+
+	echo "HOSTCFLAGS	+=$cflags" >> ${obj}/.tmp_check
+	echo "HOSTLOADLIBES_mconf	+= $libs"   >> ${obj}/.tmp_check
+	echo "HOSTLOADLIBES_nconf	+= $libs"   >> ${obj}/.tmp_check
+}
+
 check_qt()
 {
 	local cflags=""
@@ -114,6 +163,7 @@ for arg in $*; do
 	case $arg in
 	gettext)	;;
 	gtk)		;;
+	ncurses)	;;
 	qt)		;;
 	*)
 		echo "  *"

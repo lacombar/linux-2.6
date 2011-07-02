@@ -141,14 +141,6 @@ help:
 	@echo  '  listnewconfig   - List new options'
 	@echo  '  oldnoconfig     - Same as silentoldconfig but set new symbols to n (unset)'
 
-# lxdialog stuff
-check-lxdialog  := $(srctree)/$(src)/lxdialog/check-lxdialog.sh
-
-# Use recursively expanded variables so we do not call gcc unless
-# we really need to do so. (Do not call gcc as part of make mrproper)
-HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
-                    -DLOCALE
-
 # ===========================================================================
 # Shared Makefile for the various kconfig executables:
 # conf:	  Used for defconfig, oldconfig and related targets
@@ -182,10 +174,12 @@ KC_CHECK := gettext
 
 ifeq ($(MAKECMDGOALS),nconfig)
 	hostprogs-y += nconf
+	KC_CHECK += ncurses
 endif
 
 ifeq ($(MAKECMDGOALS),menuconfig)
 	hostprogs-y += mconf
+	KC_CHECK += ncurses
 endif
 
 ifeq ($(MAKECMDGOALS),update-po-config)
@@ -207,14 +201,6 @@ clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
 clean-files     += mconf qconf gconf nconf
 clean-files     += config.pot linux.pot
 
-# Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
-PHONY += $(obj)/dochecklxdialog
-$(addprefix $(obj)/,$(lxdialog)): $(obj)/dochecklxdialog
-$(obj)/dochecklxdialog:
-	$(Q)$(CONFIG_SHELL) $(check-lxdialog) -check $(HOSTCC) $(HOST_EXTRACFLAGS) $(HOSTLOADLIBES_mconf)
-
-always := dochecklxdialog
-
 # generated files seem to need this to find local include files
 HOSTCFLAGS_zconf.lex.o	:= -I$(src)
 HOSTCFLAGS_zconf.tab.o	:= -I$(src)
@@ -224,12 +210,10 @@ YACC_PREFIX_zconf	:= zconf
 
 HOSTCFLAGS_gconf.o	= -Wno-missing-prototypes
 
-HOSTLOADLIBES_mconf   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
-
-HOSTLOADLIBES_nconf	= -lmenu -lpanel -lncurses
-
+HOSTLOADLIBES_nconf	= -lmenu -lpanel
 
 need-check := $(addprefix $(obj)/,$(frontends-objs))
+need-check += $(addprefix $(obj)/,$(lxdialog))
 
 $(need-check): $(obj)/.tmp_check
 
