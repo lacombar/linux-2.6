@@ -235,8 +235,8 @@ ifeq ($(ARCH),m68knommu)
        hdr-arch  := m68k
 endif
 
-KCONFIG_CONFIG	?= .config
-export KCONFIG_CONFIG
+KBUILD_CONFIG	?= .config
+export KBUILD_CONFIG
 
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -483,6 +483,10 @@ ifeq ($(config-targets),1)
 # used for 'make defconfig'
 include $(srctree)/arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
+
+# Prepare Kconfig environment
+KCONFIG_CONFIG    = $(KBUILD_CONFIG)
+export KCONFIG_CONFIG
 
 config: scripts_basic outputmakefile FORCE
 	$(Q)mkdir -p include/linux include/config

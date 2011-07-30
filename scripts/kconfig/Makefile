@@ -11,6 +11,9 @@ else
 Kconfig := Kconfig
 endif
 
+KCONFIG_CONFIG    ?= .config
+export KCONFIG_CONFIG
+
 xconfig: $(obj)/qconf
 	$< $(Kconfig)
 
