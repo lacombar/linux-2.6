@@ -10,6 +10,8 @@ KCONFIG_CONFIG    ?= .config
 KCONFIG_DEFCONFIG ?=
 export KCONFIG_CONFIG
 
+dot-config := $(KCONFIG_CONFIG)
+
 xconfig: $(obj)/qconf
 	$< $(Kconfig)
 
@@ -43,14 +45,14 @@ endif
 localmodconfig: $(obj)/streamline_config.pl $(obj)/conf
 	$(Q)mkdir -p include/generated
 	$(Q)perl $< $(srctree) $(Kconfig) $(LSMOD_F) > .tmp.config
-	$(Q)if [ -f .config ]; then 					\
-			cmp -s .tmp.config .config ||			\
-			(mv -f .config .config.old.1;			\
-			 mv -f .tmp.config .config;			\
+	$(Q)if [ -f $(dot-config) ]; then 					\
+			cmp -s .tmp.config .$(dot-config) ||			\
+			(mv -f $(dot-config) $(dot-config).old.1;		\
+			 mv -f .tmp.config $(dot-config);			\
 			 $(obj)/conf --silentoldconfig $(Kconfig);	\
-			 mv -f .config.old.1 .config.old)		\
+			 mv -f $(dot-config).old.1 $(dot-config).old)	\
 	else								\
-			mv -f .tmp.config .config;			\
+			mv -f .tmp.config $(dot-config);		\
 			$(obj)/conf --silentoldconfig $(Kconfig);	\
 	fi
 	$(Q)rm -f .tmp.config
@@ -126,7 +128,7 @@ help:
 	@echo  '  menuconfig	  - Update current config utilising a menu based program'
 	@echo  '  xconfig	  - Update current config utilising a QT based front-end'
 	@echo  '  gconfig	  - Update current config utilising a GTK based front-end'
-	@echo  '  oldconfig	  - Update current config utilising a provided .config as base'
+	@echo  '  oldconfig	  - Update current config utilising a provided $(dot-config) as base'
 	@echo  '  localmodconfig  - Update current config disabling modules not loaded'
 	@echo  '  localyesconfig  - Update current config converting local mods to core'
 	@echo  '  silentoldconfig - Same as oldconfig, but quietly, additionally update deps'
