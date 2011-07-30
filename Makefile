@@ -973,7 +973,7 @@ PHONY += prepare archprepare prepare0 prepare1 prepare2 prepare3
 prepare3: include/config/kernel.release
 ifneq ($(KBUILD_SRC),)
 	@$(kecho) '  Using $(srctree) as source for kernel'
-	$(Q)if [ -f $(srctree)/.config -o -d $(srctree)/include/config ]; then \
+	$(Q)if [ -f $(srctree)/$(KBUILD_CONFIG) -o -d $(srctree)/include/config ]; then \
 		echo "  $(srctree) is not clean, please run 'make mrproper'";\
 		echo "  in the '$(srctree)' directory.";\
 		/bin/false; \
@@ -1168,7 +1168,7 @@ CLEAN_FILES +=	vmlinux System.map \
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
                   arch/*/include/generated
-MRPROPER_FILES += .config .config.old .version .old_version             \
+MRPROPER_FILES += $(KBUILD_CONFIG) $(KBUILD_CONFIG).old .version .old_version \
                   include/linux/version.h                               \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS
 
@@ -1295,7 +1295,7 @@ help:
 
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
 	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
-	@echo  '  make O=dir [targets] Locate all output files in "dir", including .config'
+	@echo  '  make O=dir [targets] Locate all output files in "dir", including $(KBUILD_CONFIG)'
 	@echo  '  make C=1   [targets] Check all c source with $$CHECK (sparse by default)'
 	@echo  '  make C=2   [targets] Force check of all c source with $$CHECK'
 	@echo  '  make RECORDMCOUNT_WARN=1 [targets] Warn about ignored mcount sections'
