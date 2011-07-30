@@ -5,13 +5,9 @@
 PHONY += oldconfig xconfig gconfig menuconfig config silentoldconfig update-po-config \
 	localmodconfig localyesconfig
 
-ifdef KBUILD_KCONFIG
-Kconfig := $(KBUILD_KCONFIG)
-else
-Kconfig := Kconfig
-endif
-
+Kconfig           ?= Kconfig
 KCONFIG_CONFIG    ?= .config
+KCONFIG_DEFCONFIG ?=
 export KCONFIG_CONFIG
 
 xconfig: $(obj)/qconf
@@ -113,11 +109,11 @@ savedefconfig: $(obj)/conf
 	$< --$@=defconfig $(Kconfig)
 
 defconfig: $(obj)/conf
-ifeq ($(KBUILD_DEFCONFIG),)
+ifeq ($(KCONFIG_DEFCONFIG),)
 	$< --defconfig $(Kconfig)
 else
-	@echo "*** Default configuration is based on '$(KBUILD_DEFCONFIG)'"
-	$(Q)$< --defconfig=arch/$(SRCARCH)/configs/$(KBUILD_DEFCONFIG) $(Kconfig)
+	@echo "*** Default configuration is based on '$(KCONFIG_DEFCONFIG)'"
+	$(Q)$< --defconfig=arch/$(SRCARCH)/configs/$(KCONFIG_DEFCONFIG) $(Kconfig)
 endif
 
 %_defconfig: $(obj)/conf

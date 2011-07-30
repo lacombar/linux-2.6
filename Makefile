@@ -238,6 +238,9 @@ endif
 KBUILD_CONFIG	?= .config
 export KBUILD_CONFIG
 
+KBUILD_KCONFIG	?= Kconfig
+export KBUILD_KCONFIG
+
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
@@ -482,11 +485,12 @@ ifeq ($(config-targets),1)
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
 include $(srctree)/arch/$(SRCARCH)/Makefile
-export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 # Prepare Kconfig environment
+Kconfig           = $(KBUILD_KCONFIG)
 KCONFIG_CONFIG    = $(KBUILD_CONFIG)
-export KCONFIG_CONFIG
+KCONFIG_DEFCONFIG = $(KBUILD_DEFCONFIG)
+export Kconfig KCONFIG_CONFIG KCONFIG_DEFCONFIG
 
 config: scripts_basic outputmakefile FORCE
 	$(Q)mkdir -p include/linux include/config
