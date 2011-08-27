@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <assert.h>
+
 #include "lkc.h"
 
 #define DEBUG_EXPR	0
@@ -211,7 +213,7 @@ int expr_eq(struct expr *e1, struct expr *e2)
 	case E_LIST:
 	case E_RANGE:
 	case E_NONE:
-		/* panic */;
+		assert(false);
 	}
 
 	if (DEBUG_EXPR) {
@@ -926,7 +928,7 @@ struct expr *expr_trans_compare(struct expr *e, enum expr_type type, struct symb
 	case E_LIST:
 	case E_RANGE:
 	case E_NONE:
-		/* panic */;
+		assert(false);
 	}
 	return NULL;
 }
@@ -967,7 +969,7 @@ tristate expr_calc_value(struct expr *e)
 		str2 = sym_get_string_value(e->right.sym);
 		return !strcmp(str1, str2) ? no : yes;
 	default:
-		printf("expr_calc_value: %d?\n", e->type);
+		assert(false);
 		return no;
 	}
 }
