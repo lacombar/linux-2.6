@@ -230,7 +230,10 @@ struct expr *expr_eliminate_yn(struct expr *e)
 {
 	struct expr *tmp;
 
-	if (e) switch (e->type) {
+	if (!e)
+		return NULL;
+
+	switch (e->type) {
 	case E_AND:
 		e->left.expr = expr_eliminate_yn(e->left.expr);
 		e->right.expr = expr_eliminate_yn(e->right.expr);
