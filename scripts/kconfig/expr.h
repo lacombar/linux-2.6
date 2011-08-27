@@ -23,7 +23,9 @@ struct file {
 };
 
 typedef enum tristate {
-	no, mod, yes
+	no,
+	mod,
+	yes
 } tristate;
 
 enum expr_type {
