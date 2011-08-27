@@ -362,6 +362,17 @@ void sym_calc_value(struct symbol *sym)
 				expr_free(e);
 			}
 			newval.tri = EXPR_OR(newval.tri, sym->rev_dep.tri);
+			if (sym->rev_dep.expr && newval.tri == mod) {
+				struct expr *sel;
+				tristate tri;
+
+				sel = expr_extract_selector(sym->rev_dep.expr);
+				tri = expr_calc_value(sel);
+
+				newval.tri = EXPR_OR(newval.tri, tri);
+
+				expr_free(sel);
+			}
 		}
 		if (newval.tri == mod && sym_get_type(sym) == S_BOOLEAN)
 			newval.tri = yes;

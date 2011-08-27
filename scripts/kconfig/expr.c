@@ -1047,6 +1047,27 @@ struct expr *expr_simplify_unmet_dep(struct expr *e1, struct expr *e2)
 	return expr_get_leftmost_symbol(ret);
 }
 
+struct expr *expr_extract_selector(struct expr *e)
+{
+
+	switch (e->type) {
+	case E_OR:
+		return expr_alloc_or(
+		    expr_extract_selector(e->left.expr),
+		    expr_extract_selector(e->right.expr));
+	case E_AND: {
+		return expr_get_leftmost_symbol(e);
+		}
+	case E_SYMBOL:
+		return expr_copy(e);
+	default:
+		assert(false);
+		break;
+	}
+
+	return NULL;
+}
+
 void expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const char *), void *data, int prevtoken)
 {
 	if (!e) {
