@@ -11,38 +11,34 @@
 
 #define DEBUG_EXPR	0
 
-struct expr *expr_alloc_symbol(struct symbol *sym)
+static inline struct expr *
+__expr_alloc(enum expr_type type, void *p1, void *p2)
 {
 	struct expr *e = calloc(1, sizeof(*e));
-	e->type = E_SYMBOL;
-	e->left.sym = sym;
+	e->type = type;
+	e->left.ptr = p1;
+	e->right.ptr = p2;
 	return e;
+}
+
+struct expr *expr_alloc_symbol(struct symbol *sym)
+{
+	return __expr_alloc(E_SYMBOL, sym, NULL);
 }
 
 struct expr *expr_alloc_one(enum expr_type type, struct expr *ce)
 {
-	struct expr *e = calloc(1, sizeof(*e));
-	e->type = type;
-	e->left.expr = ce;
-	return e;
+	return __expr_alloc(type, ce, NULL);
 }
 
 struct expr *expr_alloc_two(enum expr_type type, struct expr *e1, struct expr *e2)
 {
-	struct expr *e = calloc(1, sizeof(*e));
-	e->type = type;
-	e->left.expr = e1;
-	e->right.expr = e2;
-	return e;
+	return __expr_alloc(type, e1, e2);
 }
 
 struct expr *expr_alloc_comp(enum expr_type type, struct symbol *s1, struct symbol *s2)
 {
-	struct expr *e = calloc(1, sizeof(*e));
-	e->type = type;
-	e->left.sym = s1;
-	e->right.sym = s2;
-	return e;
+	return __expr_alloc(type, s1, s2);
 }
 
 struct expr *expr_alloc_and(struct expr *e1, struct expr *e2)
